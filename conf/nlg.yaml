@@ -1,0 +1,14 @@
+# data_path
+train_path: ./data/data.txt
+
+# model path
+seq2seq_model_path: ./model/seq2seq/model
+seq2seq_summary_path: ./model/bilstm_crf_1/summary
+seq2seq_predict_path: ./model/bilstm_crf_1
+
+# logger setting
+Server_Name: NLG
+LogLevel_Console: 10
+LogLevel_File: 10
+LogFile: log/nlg.log
+LogFormat: '%(asctime)s|%(levelname)s:%(message)s'
