@@ -144,10 +144,10 @@ class Seq2seq:
 
     def fit(self):
         data = self.get_input_feature()
-        seq_inputs = tf.placeholder(shape=(self.batch_size, None), dtype=tf.int32, name='seq_inputs')
-        seq_inputs_length = tf.placeholder(shape=(self.batch_size, ), dtype=tf.int32, name='seq_inputs_length')
-        seq_targets = tf.placeholder(shape=(self.batch_size, None), dtype=tf.int32, name='seq_targets')
-        seq_targets_length = tf.placeholder(shape=(self.batch_size, ), dtype=tf.int32, name='seq_targets_length')
+        seq_inputs = tf.placeholder(shape=[None, None], dtype=tf.int32, name='seq_inputs')
+        seq_inputs_length = tf.placeholder(shape=[None], dtype=tf.int32, name='seq_inputs_length')
+        seq_targets = tf.placeholder(shape=[None, None], dtype=tf.int32, name='seq_targets')
+        seq_targets_length = tf.placeholder(shape=[None], dtype=tf.int32, name='seq_targets_length')
         logits = self.model(seq_inputs, seq_inputs_length, seq_targets, seq_targets_length)
         tf.add_to_collection('logits', logits)
         loss = tf.contrib.seq2seq.sequence_loss(
