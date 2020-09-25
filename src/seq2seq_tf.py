@@ -1,7 +1,6 @@
 # encoding=utf-8
 import tensorflow as tf
 import random
-import numpy as np
 
 
 class Seq2seq:
@@ -49,12 +48,10 @@ class Seq2seq:
         self.target_vocab_size = len(self.w2i_target)
         for i in range(len(sources)):
             source = sources[i]
-            source_len = len(source)
             target = targets[i]
-            target_len = len(target) + 1
-            source_feature = [self.w2i_source[i] for i in source] + [self.w2i_source['_PAD']] * (240 - len(source))
-            target_feature = [self.w2i_target[i] for i in target] + [self.w2i_target['_EOS']] + [self.w2i_target['_PAD']] * (250 - len(target))
-            datas.append([source_feature, source_len, target_feature, target_len])
+            source_feature = [self.w2i_source[i] for i in source] + [self.w2i_source['_PAD']] * (self.max_len - len(source))
+            target_feature = [self.w2i_target[i] for i in target] + [self.w2i_target['_EOS']] + [self.w2i_target['_PAD']] * (self.max_len - len(target))
+            datas.append([source_feature, target_feature])
         return datas
 
     def batch_yield(self, datas, shuffle=False):
@@ -69,16 +66,14 @@ class Seq2seq:
         sources, source_lens, targets, target_lens = [], [], [], []
         for data in datas:
             source = data[0]
-            source_len = data[1]
-            target = data[2]
-            target_len = data[3]
+            target = data[1]
             if len(sources) == self.batch_size:
                 yield sources, source_lens, targets, target_lens
                 sources, source_lens, targets, target_lens = [], [], [], []
             sources.append(source)
-            source_lens.append(source_len)
+            source_lens.append(self.max_len)
             targets.append(target)
-            target_lens.append(target_len)
+            target_lens.append(self.max_len + 1)
         if len(sources) != 0:
             yield sources, source_lens, targets, target_lens
 
