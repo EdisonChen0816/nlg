@@ -21,7 +21,7 @@ def test_seq2seq():
         'logger': logger,
         'train_path': config['train_path'],
         'max_len': 250,
-        'batch_size': 1,
+        'batch_size': 32,
         'epoch': 100,
         'loss': 'adam',
         'rate': 0.01,
