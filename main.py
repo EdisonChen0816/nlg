@@ -22,9 +22,9 @@ def test_seq2seq():
         'train_path': config['train_path'],
         'max_len': 250,
         'batch_size': 32,
-        'epoch': 100,
-        'loss': 'adam',
-        'rate': 0.01,
+        'epoch': 10,
+        'loss': 'sgd',
+        'rate': 0.001,
         'num_units': 64,
         'tf_config': tf_config,
         'model_path': config['seq2seq_model_path'],
@@ -33,7 +33,7 @@ def test_seq2seq():
     model = Seq2seq(**cfg)
     model.fit()
     model.load(config['seq2seq_predict_path'])
-    print(model.predict('你叫什么名字'))
+    print(model.predict('么么大'))
     model.close()
 
 

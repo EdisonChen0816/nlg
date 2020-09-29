@@ -74,7 +74,7 @@ class Seq2seq:
             source_lens.append(self.max_len)
             targets.append(target)
             target_lens.append(self.max_len + 1)
-        if len(sources) != 0:
+        if len(sources) > 0:
             yield sources, source_lens, targets, target_lens
 
     def model(self, seq_inputs, seq_inputs_length, seq_targets, seq_targets_length):
@@ -98,7 +98,7 @@ class Seq2seq:
                 dtype=tf.float32,
                 name='decoder_embedding'
             )
-            tokens_go = tf.ones([self.batch_size], dtype=tf.int32, name='tokens_GO') * self.w2i_target["_GO"]
+            tokens_go = tf.ones([tf.shape(seq_inputs)[0]], dtype=tf.int32, name='tokens_GO') * self.w2i_target["_GO"]
             if self.use_teacher_forcing:
                 decoder_inputs = tf.concat([tf.reshape(tokens_go, [-1, 1]), seq_targets[:, :-1]], 1)
                 helper = tf.contrib.seq2seq.TrainingHelper(
@@ -115,7 +115,7 @@ class Seq2seq:
                     memory_sequence_length=seq_inputs_length
                 )
                 decoder_cell = tf.contrib.seq2seq.AttentionWrapper(decoder_cell, attention_mechanism)
-                decoder_initial_state = decoder_cell.zero_state(batch_size=self.batch_size, dtype=tf.float32)
+                decoder_initial_state = decoder_cell.zero_state(batch_size=tf.shape(seq_inputs)[0], dtype=tf.float32)
                 decoder_initial_state = decoder_initial_state.clone(cell_state=encoder_state)
             else:
                 decoder_initial_state = encoder_state
@@ -129,18 +129,6 @@ class Seq2seq:
                 decoder, maximum_iterations=tf.reduce_max(seq_targets_length)
             )
         return decoder_outputs.rnn_output
-        # if self.use_beam_search > 1:
-        #     self.out = decoder_outputs.predicted_ids[:, :, 0]
-        # else:
-        #     decoder_logits = decoder_outputs.rnn_output
-        #     self.out = tf.argmax(decoder_logits, 2)
-        #     sequence_mask = tf.sequence_mask(seq_targets_length, dtype=tf.float32)
-        #     self.loss = tf.contrib.seq2seq.sequence_loss(
-        #         logits=decoder_logits,
-        #         targets=seq_targets,
-        #         weights=sequence_mask
-        #     )
-        #     self.train_op = tf.train.AdamOptimizer(learning_rate=self.rate).minimize(self.loss)
 
     def fit(self):
         data = self.get_input_feature()
@@ -181,26 +169,35 @@ class Seq2seq:
         self.seq_inputs_length = graph.get_tensor_by_name('seq_inputs_length:0')
         self.seq_targets = graph.get_tensor_by_name('seq_targets:0')
         self.seq_targets_length = graph.get_tensor_by_name('seq_targets_length:0')
-        self.decoder_outputs = tf.get_collection('decoder_outputs')
+        self.logits = tf.get_collection('logits')
 
     def close(self):
         self.pred_sess.close()
 
     def _predict_text_process(self, text):
         seq = []
+        tgt = []
         for w in list(text):
             if w not in self.w2i_source:
                 w = '_PAD'
             seq.append(self.w2i_source[w])
+            tgt.append(self.w2i_target['_PAD'])
         if len(seq) > self.max_len:
             seq = seq[: self.max_len]
+            tgt = tgt[: self.max_len]
         else:
             seq += [self.w2i_source['_PAD']] * (self.max_len - len(seq))
-        return seq
+            tgt += [self.w2i_target['_PAD']] * (self.max_len - len(tgt))
+        return [seq], [tgt]
 
     def predict(self, text):
-        seq = self._predict_text_process(text)
-        pred, _ = self.pred_sess.run(self.decoder_outputs, feed_dict={self.seq_inputs: seq, self.seq_inputs_length: self.max_len})
-        decoder_logits = pred.rnn_output
-        out = tf.argmax(decoder_logits, 2)
-        return out
+        result = ''
+        self.get_input_feature()
+        seq, tgt = self._predict_text_process(text)
+        pred = self.pred_sess.run(self.logits, feed_dict={self.seq_inputs: seq, self.seq_inputs_length: [self.max_len], self.seq_targets: tgt, self.seq_targets_length: [self.max_len]})
+        out = self.pred_sess.run(tf.argmax(pred[0], 2))[0]
+        for i in out:
+            if '_EOS' == self.i2w_target[i]:
+                break
+            result += self.i2w_target[i]
+        return result

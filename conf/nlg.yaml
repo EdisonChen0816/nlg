@@ -3,8 +3,8 @@ train_path: ./data/data.txt
 
 # model path
 seq2seq_model_path: ./model/seq2seq/model
-seq2seq_summary_path: ./model/bilstm_crf_1/summary
-seq2seq_predict_path: ./model/bilstm_crf_1
+seq2seq_summary_path: ./model/seq2seq/summary
+seq2seq_predict_path: ./model/seq2seq
 
 # logger setting
 Server_Name: NLG
