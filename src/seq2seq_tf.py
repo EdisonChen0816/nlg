@@ -22,6 +22,8 @@ class Seq2seq:
         self.embedding_dim = embedding_dim
         self.use_attention = use_attention
         self.use_teacher_forcing = use_teacher_forcing
+        self.w2i_source, self.i2w_source, self.w2i_target, self.i2w_target = {}, {}, {}, {}
+        self.source_vocab_size, self.target_vocab_size = 0, 0
 
     def make_vocab(self, docs):
         w2i = {"_PAD": 0, "_GO": 1, "_EOS": 2}
@@ -192,7 +194,8 @@ class Seq2seq:
 
     def predict(self, text):
         result = ''
-        self.get_input_feature()
+        if 0 == len(self.w2i_source) and 0 == len(self.w2i_target):
+            self.get_input_feature()
         seq, tgt = self._predict_text_process(text)
         pred = self.pred_sess.run(self.logits, feed_dict={self.seq_inputs: seq, self.seq_inputs_length: [self.max_len], self.seq_targets: tgt, self.seq_targets_length: [self.max_len]})
         out = self.pred_sess.run(tf.argmax(pred[0], 2))[0]
